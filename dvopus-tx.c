@@ -14,6 +14,8 @@
 #include <zlib.h>       // used for crc32 function
 #include <netinet/in.h> // htons, we send in "network" order
 
+#include "kiss_chars.h" // Byte defs common to tx and rx
+
 const sample_size = 640;        // 8000 sample/sec * 16 bits (2 bytes) * 40ms (0.04)
 
 pa_simple *ain;                 // PulseAudio input handle
@@ -22,7 +24,7 @@ opus_int16 sample_buf[1024];    // PulseAudio sample buffer
 OpusEncoder *oe;                // Opus encoder state
 int oerr;                       // Error code from the encoder
 opus_int32 opus_len;            // Return length from the encoder
-unsigned char out_buf[256];     // Radio frame buffer
+uint8_t out_buf[256];           // Radio frame buffer
 uint32_t csum;                  // Checksum of output frame
 uint8_t i;                      // generic iterator
 uint16_t frame_seq;             // Frame sequence number
@@ -33,13 +35,6 @@ int outfd;                      // output file descriptor
 
 const char kiss_port = 0x00;    // If using a multiport TNC (eg: KPC9612)
                                 // this will probably need to be 0x10
-
-// KISS bytes
-const char FEND  = 0xc0;
-const char FESC  = 0xdb;
-const char TFEND = 0xdc;
-const char TFESC = 0xdd;
-const char CNUL  = 0x00;        // Debugger value. Can probably go away.
 
 void main(void) {
     outfd = 1;  // This will be a tty fd some day
