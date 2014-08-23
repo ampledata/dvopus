@@ -26,7 +26,7 @@ int oerr;                       // Error code from the encoder
 opus_int32 opus_len;            // Return length from the encoder
 uint8_t out_buf[256];           // Radio frame buffer
 uint32_t csum;                  // Checksum of output frame
-uint8_t i;                      // generic iterator
+uint16_t i;                     // generic iterator
 uint16_t frame_seq;             // Frame sequence number
 
 const char magic[] = "DVOp";
