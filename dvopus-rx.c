@@ -96,7 +96,7 @@ void main(void) {
             // NOTE: All buffer positions will be offset by 1 because of the KISS port ID
 
             // Check for magic
-            if (strncmp(in_buf+1,magic,4) != 0) {
+            if (strncmp(in_buf+2,magic,4) != 0) {
                 fprintf(stderr,"DEBUG: Invalid magic. Not one of ours or frame corrupt.\n");
                 i=0;
                 continue;
