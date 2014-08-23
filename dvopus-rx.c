@@ -21,9 +21,9 @@ const sample_size = 640;        // 8000 sample/sec * 16 bits (2 bytes) * 40ms (0
 pa_simple *aout;                // PulseAudio input handle
 pa_sample_spec aout_spec;       // PulseAudio sample specification
 opus_int16 sample_buf[1024];    // PulseAudio sample buffer
-OpusEncoder *od;                // Opus decoder state
+OpusDecoder *od;                // Opus decoder state
 int oerr;                       // Error code from the decoder
-opus_int32 opus_len;            // Return length from the decoder
+int num_samples;                // Number of samples decoded by Opus
 uint8_t in_buf[256];            // Radio frame buffer
 uint8_t inchar;                 // Single char buffer from radio stream
 uint32_t csum;                  // Checksum calculated locally
@@ -59,7 +59,7 @@ void main(void) {
                         );
 
     // Set up the Opus encoder
-    od = opus_encoder_create(8000,1,OPUS_APPLICATION_VOIP,&oerr);
+    od = opus_decoder_create(8000,1,&oerr);
 
     // Set initial frame sequence counter
     frame_seq = 1;
@@ -88,7 +88,6 @@ void main(void) {
             // A minimal frame should be magic, sequence and checksum, so 10 bytes
             // because KISS sends FEND at start and end, we should trip this every frame
             if (i<10) {
-                fprintf(stderr,"DEBUG: Frame too small, ignoring.\n");
                 i=0;
                 continue;
             };
@@ -96,7 +95,7 @@ void main(void) {
             // NOTE: All buffer positions will be offset by 1 because of the KISS port ID
 
             // Check for magic
-            if (strncmp(in_buf+2,magic,4) != 0) {
+            if (strncmp(in_buf+1,magic,4) != 0) {
                 fprintf(stderr,"DEBUG: Invalid magic. Not one of ours or frame corrupt.\n");
                 i=0;
                 continue;
@@ -117,6 +116,8 @@ void main(void) {
             if (csum == csum_in) {
                 fprintf(stderr,"valid\n");
                 // TODO: Decode opus and play sample
+                num_samples = opus_decode(od,in_buf+7,i-11,sample_buf,sizeof(sample_buf)/2,0);
+                pa_simple_write(aout,sample_buf,num_samples*2,&oerr);
             } else {
                 fprintf(stderr,"INVALID\n");
             };
