@@ -35,9 +35,9 @@ uint16_t *p_frame_seq_in;       // Pointer to frame sequence in incoming frame
 
 const uint8_t magic[] = "DVOp";
 
-int infd;                       // output file descriptor
+int infd;                       // input file descriptor
 
-const uint8_t kiss_port = 0x00;    // If using a multiport TNC (eg: KPC9612)
+const uint8_t kiss_port = 0x00; // If using a multiport TNC (eg: KPC9612)
                                 // this will probably need to be 0x10
 
 void main(void) {
@@ -121,13 +121,12 @@ void main(void) {
                 // TODO: Decode opus and play sample
                 num_samples = opus_decode(od,in_buf+7,i-11,sample_buf,sizeof(sample_buf)/2,0);
                 pa_simple_write(aout,sample_buf,num_samples*2,&oerr);
+                i=0;
+                frame_seq++;
+                continue;
             } else {
                 fprintf(stderr,"INVALID\n");
             };
-
-            i=0;
-            frame_seq++;
-            continue;
         }; // end frame decode handler
 
         if (inchar == FESC) {
