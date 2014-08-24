@@ -3,8 +3,8 @@
  * Prototype for sending Opus voice frames over an amateur radio
  * KISS TNC
  *
- * $Id: 
- * $URL: 
+ * $Id$
+ * $URL$ 
  */
 
 #include <stdio.h>
@@ -15,8 +15,6 @@
 #include <netinet/in.h> // htons, we send in "network" order
 
 #include "kiss_chars.h" // Byte defs common to tx and rx
-
-const sample_size = 640;        // 8000 sample/sec * 16 bits (2 bytes) * 40ms (0.04)
 
 pa_simple *aout;                // PulseAudio input handle
 pa_sample_spec aout_spec;       // PulseAudio sample specification
@@ -32,11 +30,14 @@ uint16_t i;                     // generic iterator
 uint16_t frame_seq;             // Frame sequence number
 uint16_t frame_seq_in;          // Frame sequence recieved
 
-const char magic[] = "DVOp";
+uint32_t *p_csum_in;            // Pointer to checksum in incoming frame
+uint16_t *p_frame_seq_in;       // Pointer to frame sequence in incoming frame
+
+const uint8_t magic[] = "DVOp";
 
 int infd;                       // output file descriptor
 
-const char kiss_port = 0x00;    // If using a multiport TNC (eg: KPC9612)
+const uint8_t kiss_port = 0x00;    // If using a multiport TNC (eg: KPC9612)
                                 // this will probably need to be 0x10
 
 void main(void) {
@@ -102,10 +103,12 @@ void main(void) {
             };
 
             // extract received frame sequence
-            memcpy(&frame_seq_in,in_buf+5,2);
+            p_frame_seq_in = in_buf+5;
+            frame_seq_in = ntohs(*p_frame_seq_in);
 
             // extract received checksum
-            memcpy(&csum_in,in_buf+(i-4),4);
+            p_csum_in = in_buf+(i-4);
+            csum_in = ntohl(*p_csum_in);
 
             // Compute local checksum
             csum = crc32(0,in_buf+5,i-9);

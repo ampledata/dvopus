@@ -29,11 +29,14 @@ uint32_t csum;                  // Checksum of output frame
 uint16_t i;                     // generic iterator
 uint16_t frame_seq;             // Frame sequence number
 
-const char magic[] = "DVOp";
+uint32_t *p_csum;               // Pointer to checksum in outgoing frame
+uint16_t *p_frame_seq;          // Pointer to frame sequence in outgoing frame
+
+const uint8_t magic[] = "DVOp";
 
 int outfd;                      // output file descriptor
 
-const char kiss_port = 0x00;    // If using a multiport TNC (eg: KPC9612)
+const uint8_t kiss_port = 0x00;    // If using a multiport TNC (eg: KPC9612)
                                 // this will probably need to be 0x10
 
 void main(void) {
@@ -73,11 +76,13 @@ void main(void) {
             } else {
                 // Load frame sequence to the beginning of our buffer
                 // so that it can be checksummed with the payload
-                memcpy(out_buf,&frame_seq,2);
+                p_frame_seq = out_buf + 0;
+                *p_frame_seq = htons(frame_seq);
 
                 csum = crc32(0,out_buf,opus_len+2);
                 // Load checksum at end of buffer
-                memcpy(out_buf+(opus_len+2),&csum,4);
+                p_csum = out_buf+(opus_len+2);
+                *p_csum = htonl(csum);
 
                 fprintf(stderr,"DEBUG: seq=%5d, opus_len=%d, crc=%08x\n",frame_seq,opus_len,csum);
 
