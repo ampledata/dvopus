@@ -1,0 +1,49 @@
+9600bps*0.2 (200ms) = 1920/8 = 240 char absolute max
+Want some elbow room for framing, possibly IDs
+
+Frame structure
+
+Magic (DVOp)
+Superframe seq (2 bytes)
+10x
+  Opus packet, 20ms, 18 (7200) or 20 (8000) bytes
+  CRC-16 (need routine)
+
+Total frame length
+4+2+200 = 206 bytes (7200)
+4+2+220 = 226 bytes (8000)
+
+65535 * 0.2 = 13107 sec / 60 = 218 minutes
+likely overkill. Can steal some bits here if need be.
+if 1 byte: 256 * 0.2 = 51 sec
+  can we stand the decoder resetting this much?
+  trap the rollover condition? (trying to avoid complication)
+
+Decode logic:
+If not our magic, pass.
+If superframe length mismatch, reset the decoder and pass.
+
+(Much easier sequence detection)
+If received seq isn't prev+1, reset the decoder.
+
+iterate over 10 Opus packets in superframe:
+check CRC-16
+if match, decode
+if mismatch, call the PLC
+
+note: to reset decoder: opus_decoder_ctl(dec_ctx, OPUS_RESET_STATE);
+
+other ramblings:
+7200 to buy back the bitrate for callsigns?
+Do we really need callsigns every super, or once a second (10 supers)?
+If we do every super, CRC "protect" the callsigns and the frame seq?
+
+Is this even worth it?
+http://www.opus-codec.org/docs/html_api-1.1.0/group__opus__encoderctls.htm
+Warning
+    Only the MDCT mode of Opus can provide hard CBR behavior. 
+
+Hard CBR. For LPC/hybrid modes at very low bit-rate, this can cause noticeable quality degradation. 
+
+Try 2a may be a frame with fewer subframes listing variable lengths to allow VBR to function.
+
